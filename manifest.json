@@ -1,0 +1,16 @@
+{
+  "name": "Arrange Trial vol.1 for PUKUPUKU players",
+  "short_name": "Darts for PK",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#00f2ff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "dartsicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+}
+  ]
+}
