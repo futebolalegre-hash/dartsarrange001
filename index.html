@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- PWA 設定 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PUKUPUKU">
+<link rel="manifest" href="data:application/json,base64,ewogICJuYW1lIjogIkFycmFuZ2UgdHJpYWwgdHJhaW5pbmcgdm9sLjEgZm9yIFBVS1VQVUtVIFBsYXllcnMiLAogICJzaG9ydF9uYW1lIjogIlBVS1VQVUtVIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwNTA1MDUiLAogICJ0aGVtZV9jb2xvciI6ICIjMDBmMmZmIgp9">
+
+<title>Arrange trial for PUKUPUKU</title>
+<style>
+    :root {
+        --accent-cyan: #00f2ff; --neon-blue: #0077ff; --neon-pink: #ff00ff;
+        --accent-gold: #ffd700; --accent-red: #ff0055; --panel-bg: rgba(5, 5, 5, 0.98);
+        --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    body {
+        background: #000; color: #fff; font-family: 'Arial Black', sans-serif;
+        margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-height: 100vh; overflow: hidden; touch-action: manipulation;
+    }
+    .container {
+        width: 100%; max-width: 440px; height: 98vh; background: var(--panel-bg);
+        border-radius: 24px; position: relative; overflow: hidden; display: flex; flex-direction: column; border: 2px solid #333;
+        box-shadow: 0 0 50px rgba(0, 119, 255, 0.4);
+    }
+    .header-ui { 
+        width:100%; height: 95px; padding: 0 15px; box-sizing: border-box; display:flex; justify-content:space-between; align-items:center; 
+        background: #111; border-bottom: 2px solid #333; flex-shrink: 0;
+    }
+    .logo-main { color: #fff; font-size: 13px; margin: 0; line-height: 1.3; font-style: italic; text-shadow: 0 0 8px var(--neon-blue); flex: 1; }
+    .neon-puku { color: #fff; text-shadow: 0 0 5px #fff, 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink); }
+    .music-toggle { background: #000; border: 2px solid #444; color: #fff; width: 44px; height: 44px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; }
+    .music-on { border-color: var(--accent-cyan); color: var(--accent-cyan); box-shadow: 0 0 10px var(--neon-blue); }
+
+    .main-stage { flex: 1; position: relative; width: 100%; overflow: hidden; }
+    .screen { position: absolute; inset: 0; padding: 12px; box-sizing: border-box; display: none; flex-direction: column; align-items: center; z-index: 10; overflow-y: auto; }
+    .visible { display: flex !important; }
+
+    .config-group { width: 100%; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; margin-bottom: 6px; border: var(--glass-border); box-sizing: border-box; }
+    .config-label { font-size: 9px; color: var(--accent-cyan); font-weight: bold; margin-bottom: 4px; display: block; text-transform: uppercase; }
+    .radio-group { display: flex; gap: 4px; }
+    .radio-group label { flex: 1; text-align: center; font-size: 9px; padding: 10px 2px; background: #1a1a1a; border-radius: 8px; cursor: pointer; border: 1px solid #333; color: #fff; transition: 0.2s; }
+    .radio-group input:checked + label { background: var(--accent-cyan); color: #000 !important; font-weight: bold; border-color: #fff; }
+    
+    select, input[type="number"], input[type="text"] { width: 100%; padding: 12px; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
+
+    .score-num { font-size: 42px; font-weight: bold; font-family: 'Impact'; line-height: 1; }
+    .rem-num { color: var(--accent-gold); text-shadow: 0 0 10px rgba(255,215,0,0.4); }
+
+    #board-wrapper { width: 350px; height: 350px; position: relative; margin: 0 auto; flex-shrink: 0; }
+    svg.board { width: 100%; height: 100%; cursor: pointer; }
+    .area-b { fill: #111; stroke: #333; } .area-w { fill: #eee; stroke: #333; } .area-r { fill: #f03; stroke: #fff; } .area-bl { fill: #06f; stroke: #fff; }
+    .hit-flash { fill: var(--accent-cyan) !important; }
+    .txt-num { font-weight: bold; fill: #fff; font-size: 26px; text-anchor: middle; dominant-baseline: middle; pointer-events: none; opacity: 0.7; }
+    
+    .shots-display { display: flex; gap: 8px; margin: 8px 0; }
+    .shot-slot { width: 85px; height: 42px; background: #000; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 10px; font-family: monospace; color: var(--accent-cyan); }
+    button { width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; font-size: 16px; transition: 0.2s; }
+    .btn-main { background: var(--accent-cyan); color: #000; box-shadow: 0 4px 15px rgba(0,242,255,0.3); }
+    .res-card { background: #111; padding: 12px; border-radius: 14px; border: 1px solid #333; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+    .history-table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: sans-serif; }
+    .history-table td { padding: 8px 6px; border-bottom: 1px solid #222; }
+    .logic-box { background: rgba(0, 242, 255, 0.05); border-left: 4px solid var(--accent-pink); padding: 10px; font-size: 11px; line-height: 1.4; color: #ccc; margin-top: 10px; text-align: left; }
+</style>
+</head>
+<body>
+
+<div style="display:none;">
+    <audio id="bgm-upbeat" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+    <audio id="bgm-cyber" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"></audio>
+    <audio id="bgm-calm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
+    <audio id="bgm-ending" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3"></audio>
+</div>
+
+<div class="container">
+    <div class="header-ui">
+        <div class="logo-container">
+            <h1 class="logo-main" id="ui-title">Arrange trial training vol.1<br>for <span class="neon-puku">PUKUPUKU</span> players</h1>
+        </div>
+        <button id="btn-music" class="music-toggle" onclick="AUDIO.toggle()">♪</button>
+    </div>
+
+    <div class="main-stage">
+        <!-- START SCREEN -->
+        <div id="screen-start" class="screen visible">
+            <div class="config-group" style="margin-top:10px;">
+                <span class="config-label" id="label-bgm">BGM Select</span>
+                <select id="bgm-select" onchange="AUDIO.handleMenuChange()">
+                    <option value="bgm-upbeat">Track 1: Upbeat Techno</option>
+                    <option value="bgm-cyber">Track 2: Cyber Punk</option>
+                    <option value="bgm-calm">Track 3: Relax Vibes</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:5px; width:100%;">
+                <div class="config-group" style="flex:1;"><span class="config-label" id="label-rounds">Rounds</span><input type="number" id="cfg-rounds" min="1" max="20" value="5"></div>
+                <div class="config-group" style="flex:1;"><span class="config-label" id="label-lang-title">Language</span><div class="radio-group"><input type="radio" name="lang" id="lang-jp" value="jp" checked onchange="GAME.updateLang()"><label for="lang-jp">JP</label><input type="radio" name="lang" id="lang-en" value="en" onchange="GAME.updateLang()"><label for="lang-en">EN</label></div></div>
+            </div>
+            <div class="config-group">
+                <span class="config-label" id="label-out">Out Mode</span>
+                <div class="radio-group">
+                    <input type="radio" name="out-mode" id="om-single" value="single"><label for="om-single" id="opt-single">SINGLE</label>
+                    <input type="radio" name="out-mode" id="om-master" value="master"><label for="om-master" id="opt-master">MASTER</label>
+                    <input type="radio" name="out-mode" id="om-double" value="double" checked><label for="om-double" id="opt-double">DOUBLE</label>
+                </div>
+            </div>
+            <div class="config-group" style="margin-bottom:20px;">
+                <span class="config-label" id="label-bull">Bull Mode</span>
+                <div class="radio-group">
+                    <input type="radio" name="bull-mode" id="bm-fat" value="fat" checked><label for="bm-fat">FAT BULL</label>
+                    <input type="radio" name="bull-mode" id="bm-seba" value="seba"><label for="bm-seba">SEPA BULL</label>
+                </div>
+            </div>
+            <button class="btn-main" onclick="GAME.start()" id="btn-start">START SESSION</button>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="screen-game" class="screen">
+            <div style="width:100%; display:flex; justify-content:space-between; font-size:11px; color:#666; margin-bottom:5px;"><span id="ui-q">Q. 1</span><span id="ui-mode-tag">--</span></div>
+            <div style="width:100%; height:6px; background:#222; border-radius:3px; margin-bottom:10px; overflow:hidden;"><div id="ui-timer" style="width:100%; height:100%; background:var(--accent-cyan); transition:width 0.1s linear;"></div></div>
+            <div style="display:flex; justify-content:space-around; width:100%; margin-bottom:5px;">
+                <div style="text-align:center;"><div class="config-label" id="label-target-game">TARGET</div><div id="ui-target" class="score-num">--</div></div>
+                <div style="text-align:center;"><div class="config-label" id="label-remain-game">REMAIN</div><div id="ui-rem" class="score-num rem-num">--</div></div>
+            </div>
+            <div id="board-wrapper"></div>
+            <div class="shots-display"><div id="s0" class="shot-slot"></div><div id="s1" class="shot-slot"></div><div id="s2" class="shot-slot"></div></div>
+            <div style="display:flex; width:100%; gap:10px;"><button style="background:#333; color:#fff; flex:1; font-size:12px;" onclick="GAME.clear()" id="btn-reset">RESET</button><button class="btn-main" style="flex:2;" onclick="GAME.check()" id="btn-throw">THROW</button></div>
+        </div>
+
+        <!-- ROUND RESULT -->
+        <div id="modal-round" class="screen" style="z-index:100; background:rgba(0,0,0,0.95); justify-content:center;">
+            <div id="round-grade" style="font-size:80px; font-weight:bold; font-family:'Impact'; text-align:center; min-height:85px; display:flex; align-items:center; justify-content:center;">A</div>
+            <div id="round-pts" style="font-size:24px; color:var(--accent-gold); margin-bottom:10px; text-align:center;">+ 0 pts</div>
+            
+            <div style="text-align:center; color:#888; font-size:11px; margin-bottom:15px;'>
+                <span id="label-round-target-desc">TARGET SCORE:</span> <span id="round-target-val" style="color:#fff; font-weight:bold; font-size:16px;">--</span>
+            </div>
+
+            <div class="res-card" style="text-align:center;">
+                <div class="config-label" id="label-theory-title">RECOMMENDED ROUTE</div>
+                <div id="round-theory" style="font-size:24px; font-weight:bold; color:var(--accent-cyan);">--</div>
+            </div>
+            <button class="btn-main" onclick="GAME.next()" id="btn-continue">CONTINUE</button>
+        </div>
+
+        <!-- FINAL REVIEW -->
+        <div id="modal-end" class="screen" style="z-index:110; background:rgba(0,0,0,0.98);">
+            <h1 style="color:var(--accent-gold); text-align:center; font-size:22px; margin-bottom:5px;" id="label-review-title">SESSION REVIEW</h1>
+            <div id="ui-final-mode-display" style="font-size:10px; color:var(--accent-cyan); text-align:center; margin-bottom:10px; letter-spacing:1px; font-weight:bold;">--</div>
+            <div style="display:flex; gap:10px; margin-bottom:10px; width:100%;">
+                <div class="res-card" style="flex:1; text-align:center;"><div class="config-label" id="label-q-avg">QUALITY</div><div id="res-avg-q" style="font-size:28px; font-weight:bold; color:var(--accent-cyan);">0</div></div>
+                <div class="res-card" style="flex:1; text-align:center;"><div class="config-label" id="label-s-avg">SPEED</div><div id="res-avg-s" style="font-size:28px; font-weight:bold; color:var(--accent-cyan);">0</div></div>
+            </div>
+            <div class="res-card" style="padding:0; overflow-x:auto;">
+                <table class="history-table">
+                    <thead><tr><th style="padding:8px; color:var(--accent-cyan)">Q</th><th id="th-route" style="padding:8px; color:var(--accent-cyan)">ROUTE</th><th id="th-theory" style="padding:8px; color:var(--accent-cyan)">THEORY</th></tr></thead>
+                    <tbody id="res-history-body"></tbody>
+                </table>
+            </div>
+            <div id="theory-logic-text" class="logic-box">...</div>
+            <button class="btn-main" onclick="location.reload()" id="btn-retry" style="margin-top:10px;">RETRY</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const NUMS = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+const MASTER_TABLE = { 180:"T20-T20-T20", 170:"T20-T20-DB", 160:"DB-DB-T20", 150:"DB-DB-DB", 140:"DB-DB-D20", 130:"DB-DB-D15", 120:"T20-T20", 110:"DB-T20", 100:"DB-DB", 90:"DB-D20", 80:"DB-D15", 70:"T20-D5", 60:"T20", 50:"DB", 40:"D20", 39:"T13", 32:"D16", 24:"D12", 20:"D10" };
+const SEBA_TABLE = { 170:"T20-T20-DB", 167:"T20-T19-DB", 164:"T20-T18-DB", 161:"T20-T17-DB", 160:"T20-T20-D20", 150:"T20-T18-D18", 140:"T20-T20-D10", 132:"T20-T16-D12", 121:"T20-T11-D14", 100:"T20-D20", 94:"T18-D20", 82:"T14-D20", 70:"T10-D20", 64:"T16-D8", 50:"10-D20", 41:"9-D16" };
+const DOUBLE_TABLE = { 61:"T15-D8", 62:"T10-D16", 63:"T13-D12", 64:"T16-D8", 65:"T19-D4 / SB-D20", 66:"T10-D18", 67:"T17-D8", 68:"T20-D4", 69:"T15-D12", 70:"T10-D20", 71:"T13-D16", 72:"T12-D18", 73:"T19-D8", 74:"T14-D16", 75:"T17-D12", 76:"T20-D8 / T16-D14", 77:"T19-D10", 78:"T18-D12", 79:"T19-D11", 80:"T20-D10", 81:"T19-D12", 82:"T14-D20 / DB-D16", 83:"T17-D16", 84:"T20-D12 / T16-D18", 85:"T15-D20", 86:"T18-D16", 87:"T17-D18", 88:"T20-D14", 89:"T19-D16", 90:"T18-D18 / T20-D15", 91:"T17-D20", 92:"T20-D16", 93:"T19-D18", 94:"T18-D20", 95:"T19-D19", 96:"T20-D18", 97:"T19-D20", 98:"T20-D19", 100:"T20-D20", 101:"T17-DB", 104:"T18-DB", 107:"T19-DB", 110:"T20-DB" };
+
+const LANG_MAP = {
+    jp: { title: "Arrange trial training vol.1<br>for <span class='neon-puku'>PUKUPUKU</span> players", bgm: "BGM 選択", rounds: "ラウンド数", out: "アウト設定", bull: "ブル設定", start: "トレーニング開始", target: "ターゲット", remain: "残り点数", reset: "リセット", theory_title: "推奨セオリー", continue: "次へ進む", review_title: "セッション・レビュー", q_avg: "品質平均", s_avg: "速度平均", th_route: "自分のルート", th_theory: "セオリー", retry: "やり直す", logic: "根拠: トリプルは面積が最も狭く難易度が高いですが、推奨ルートは外してシングル（面積が広い）に入っても『次に上がりやすい偶数』を残せる数学的確率が高いものを優先しています。", opt_single: "シングル", opt_master: "マスター", opt_double: "ダブル", opt_fat: "ファット", opt_seba: "セパレート", timeout: "タイムアウト", bust: "バースト", miss: "ミス", round_target: "今回のお題:" },
+    en: { title: "Arrange trial training vol.1<br>for <span class='neon-puku'>PUKUPUKU</span> players", bgm: "BGM SELECT", rounds: "ROUNDS", out: "OUT MODE", bull: "BULL MODE", start: "START SESSION", target: "TARGET", remain: "REMAIN", reset: "RESET", theory_title: "RECOMMENDED", continue: "CONTINUE", review_title: "SESSION REVIEW", q_avg: "QUALITY", s_avg: "SPEED", th_route: "ROUTE", th_theory: "THEORY", retry: "RETRY", logic: "Logic: While Triples are narrow, these routes prioritize staying on track even if you hit the wider Single area, leaving a clean even finish.", opt_single: "SINGLE", opt_master: "MASTER", opt_double: "DOUBLE", opt_fat: "FAT", opt_seba: "SEPA", timeout: "TIMEOUT", bust: "BUST", miss: "MISS", round_target: "ROUND TARGET:" }
+};
+
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+const AUDIO = {
+    active: false, isEnding: false, currentBgmId: 'bgm-upbeat',
+    unlock: function() {
+        if(AC.state === 'suspended') AC.resume();
+        ['bgm-upbeat','bgm-cyber','bgm-calm','bgm-ending'].forEach(id => {
+            const a = document.getElementById(id); if(a) { a.play().then(()=>a.pause()).catch(()=>{}); }
+        });
+    },
+    toggle: function() { if(!this.active) { this.playCurrent(); } else { this.stopAllBgm(); } },
+    handleMenuChange: function() {
+        const newId = document.getElementById('bgm-select').value;
+        const wasActive = this.active;
+        this.stopAllBgm(); this.currentBgmId = newId;
+        if(wasActive) this.playCurrent();
+    },
+    playCurrent: function() {
+        const el = document.getElementById(this.currentBgmId);
+        if(el) { el.play().then(() => { this.active = true; document.getElementById('btn-music').classList.add('music-on'); }).catch(() => {}); }
+    },
+    stopAllBgm: function() {
+        ['bgm-upbeat','bgm-cyber','bgm-calm','bgm-ending'].forEach(id => {
+            const a = document.getElementById(id); if(a) a.pause();
+        });
+        this.active = false; document.getElementById('btn-music').classList.remove('music-on');
+    },
+    playEnding: function() { this.stopAllBgm(); this.isEnding = true; this.currentBgmId = 'bgm-ending'; this.playCurrent(); },
+    playSFX: function(type) {
+        if(AC.state === 'suspended') AC.resume();
+        const t = AC.currentTime;
+        if(type === 'single') this.synthChime(880, t);
+        else if(type === 'double') { this.synthChime(880, t); this.synthChime(880, t + 0.12); }
+        else if(type === 'triple') this.synthBoom(t);
+        else if(type === 'bull') this.synthBazooka(t);
+    },
+    synthChime: function(f, t) {
+        const o = AC.createOscillator(); const g = AC.createGain();
+        o.type='sine'; o.frequency.setValueAtTime(f, t);
+        g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.01, t+0.4);
+        o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.4);
+    },
+    synthBoom: function(t) {
+        const f = AC.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(1000, t);
+        const g = AC.createGain(); g.gain.setValueAtTime(0.8, t); g.gain.linearRampToValueAtTime(0, t+0.5);
+        const o = AC.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(100, t);
+        o.connect(f); f.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.5);
+    },
+    synthBazooka: function(t) {
+        this.synthBoom(t);
+        const o = AC.createOscillator(); const g = AC.createGain();
+        o.frequency.setValueAtTime(60, t); g.gain.setValueAtTime(1.0, t);
+        g.gain.linearRampToValueAtTime(0, t+0.8);
+        o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.8);
+    }
+};
+
+const GAME = {
+    shots:[], target:0, rem:0, q:0, maxQ:5, active:false, timer:null, totalQ:0, totalS:0, history: [], started: false, config: { outMode:'double', bullMode:'fat', lang:'jp' },
+    updateLang: function() {
+        const lang = document.querySelector('input[name="lang"]:checked').value;
+        const m = LANG_MAP[lang]; this.config.lang = lang;
+        const safeSet = (id, txt) => { const el = document.getElementById(id); if(el) el.innerHTML = txt; };
+        safeSet('ui-title', m.title); safeSet('label-bgm', m.bgm); safeSet('label-rounds', m.rounds); safeSet('label-lang-title', lang==='jp'?
+"言語":"LANGUAGE");
+        safeSet('label-out', m.out); safeSet('label-bull', m.bull); safeSet('btn-start', m.start);
+        safeSet('label-target-game', m.target); safeSet('label-remain-game', m.remain); safeSet('btn-reset', m.reset);
+        safeSet('label-theory-title', m.theory_title); safeSet('btn-continue', m.continue); safeSet('label-review-title', m.review_title);
+        safeSet('label-q-avg', m.q_avg); safeSet('label-s-avg', m.s_avg); safeSet('th-route', m.th_route); safeSet('th-theory', m.th_theory);
+        safeSet('btn-retry', m.retry); safeSet('opt-single', m.opt_single); safeSet('opt-master', m.opt_master);
+        safeSet('opt-double', m.opt_double); safeSet('opt-fat', m.opt_fat); safeSet('opt-seba', m.opt_seba);
+        safeSet('theory-logic-text', m.logic); safeSet('label-round-target-desc', m.round_target);
+        const btnThrow = document.getElementById('btn-throw'); if(btnThrow) btnThrow.innerText = lang === 'jp' ? "投げる" : "THROW";
+    },
+    start: function() {
+        this.started = true;
+        const selectedId = document.getElementById('bgm-select').value;
+        if(AUDIO.currentBgmId !== selectedId || !AUDIO.active) { AUDIO.unlock(); AUDIO.currentBgmId = selectedId; setTimeout(() => AUDIO.playCurrent(), 100); }
+        this.maxQ = parseInt(document.getElementById('cfg-rounds').value) || 5;
+        this.config.outMode = document.querySelector('input[name="out-mode"]:checked').value;
+        this.config.bullMode = document.querySelector('input[name="bull-mode"]:checked').value;
+        this.updateLang();
+        document.getElementById('screen-start').classList.remove('visible');
+        document.getElementById('screen-game').classList.add('visible');
+        this.drawBoard(); this.totalQ = this.totalS = this.q = 0; this.history = []; this.next();
+    },
+    next: function() {
+        if(this.q >= this.maxQ) { this.showFinalResult(); return; }
+        document.getElementById('modal-round').classList.remove('visible');
+        this.shots = []; this.q++;
+        let table = (this.config.outMode === 'master') ? MASTER_TABLE : (this.config.bullMode === 'seba' ? SEBA_TABLE : DOUBLE_TABLE);
+        const keys = Object.keys(table);
+        this.target = parseInt(keys[Math.floor(Math.random()*keys.length)]);
+        this.rem = this.target; this.uiRefresh();
+        this.active = true; this.timeLeft = 15;
+        if(this.timer) clearInterval(this.timer);
+        this.timer = setInterval(() => { this.timeLeft -= 0.1; document.getElementById('ui-timer').style.width = Math.max(0,(this.timeLeft/15)*100) + "%"; if(this.timeLeft <= 0) this.check(true); }, 100);
+    },
+    addShot: function(v, m, el) {
+        if(!this.active || this.shots.length >= 3) return;
+        el.classList.add('hit-flash'); setTimeout(()=>el.classList.remove('hit-flash'), 100);
+        if (m >= 4) AUDIO.playSFX('bull'); else if (m === 3) AUDIO.playSFX('triple'); else if (m === 2) AUDIO.playSFX('double'); else AUDIO.playSFX('single');
+        let p = (m===5)?50:(m===4?(this.config.bullMode==='fat'?50:25):v*m);
+        let t = (m===5)?"DB":(m===4)?"SB":(m===3?"T":m===2?"D":"S")+v;
+        this.shots.push({p, m, t}); this.rem -= p; this.uiRefresh();
+        if(this.rem <= 0) { this.active = false; setTimeout(()=>this.check(), 450); }
+    },
+    check: function(timeout = false) {
+        this.active = false; clearInterval(this.timer);
+        let table = (this.config.outMode === 'master') ? MASTER_TABLE : (this.config.bullMode === 'seba' ? SEBA_TABLE : DOUBLE_TABLE);
+        const theoryStr = table[this.target] || "--";
+        const m = LANG_MAP[this.config.lang];
+        if(timeout || this.rem > 0) { this.processResult(0, 0, theoryStr, timeout ? m.timeout : m.miss, timeout); return; }
+        let success = (this.rem === 0);
+        if (success) {
+            const last = this.shots[this.shots.length-1];
+            if (this.config.outMode === 'double' && last.m !== 2 && last.t !== "DB") success = false;
+            if (this.config.outMode === 'master' && last.m < 2 && last.t !== "SB") success = false;
+        }
+        const bust = (this.rem < 0 || this.rem === 1 || (this.rem === 0 && !success));
+        let qPts = success ? (this.shots[0].t === theoryStr.split("-")[0].split(" / ")[0] ? 50 : 40) : 0;
+        let sPts = (bust || this.rem > 0) ? 0 : Math.round((this.timeLeft / 15) * 50);
+        this.processResult(qPts, sPts, theoryStr, bust ? m.bust : null, false);
+    },
+    processResult: function(qPts, sPts, theoryStr, errorMsg, timeout) {
+        this.totalQ += qPts; this.totalS += sPts;
+        const playerRoute = this.shots.map(s=>s.t).join("->");
+        this.history.push({ target: this.target, route: timeout ? "MISS" : (playerRoute || "MISS"), theory: theoryStr });
+        const el = document.getElementById('round-grade');
+        if(errorMsg) { el.innerText = errorMsg; el.style.fontSize = "60px"; el.style.color = "var(--accent-red)"; }
+        else { const g = (qPts+sPts>=90?"S":qPts+sPts>=70?"A":"B"); el.innerText = g; el.style.fontSize = "100px"; el.style.color = "var(--accent-gold)"; }
+        document.getElementById('round-pts').innerText = `+ ${qPts + sPts} pts`;
+        document.getElementById('round-theory').innerText = theoryStr;
+        document.getElementById('round-target-val').innerText = this.target;
+        document.getElementById('modal-round').classList.add('visible');
+    },
+    showFinalResult: function() {
+        document.getElementById('modal-round').classList.remove('visible');
+        document.getElementById('modal-end').classList.add('visible');
+        AUDIO.playEnding();
+        document.getElementById('res-avg-q').innerText = Math.round(this.totalQ / this.maxQ);
+        document.getElementById('res-avg-s').innerText = Math.round(this.totalS / this.maxQ);
+        document.getElementById('res-history-body').innerHTML = this.history.map(h => `<tr><td style="font-family:Impact; font-size:18px;">${h.target}</td><td style="color:var(--accent-gold)">${h.route}</td><td style="color:#888;">${h.theory}</td></tr>`).join('');
+        const m = LANG_MAP[this.config.lang];
+        document.getElementById('ui-final-mode-display').innerText = `${m['opt_' + this.config.outMode]} OUT | ${m['opt_' + this.config.bullMode]} BULL`.toUpperCase();
+    },
+    clear: function() { this.shots=[]; this.rem=this.target; this.uiRefresh(); },
+    uiRefresh: function() {
+        document.getElementById('ui-target').innerText = this.target;
+        document.getElementById('ui-rem').innerText = this.rem;
+        const qText = this.config.lang === 'jp' ? "問" : "Q";
+        document.getElementById('ui-q').innerText = `${qText}. ${this.q} / ${this.maxQ}`;
+        for(let i=0;i<3;i++) document.getElementById('s'+i).innerText = this.shots[i] ? this.shots[i].t : "";
+    },
+    drawBoard: function() {
+        const area=document.getElementById('board-wrapper'); area.innerHTML="";
+        const ns="http://www.w3.org/2000/svg"; const svg=document.createElementNS(ns,"svg");
+        svg.setAttribute("viewBox","-260 -260 520 520"); svg.setAttribute("class","board"); area.appendChild(svg);
+        const r = (rin, rout, c1, c2, m) => {
+            const step = (Math.PI*2)/20;
+            NUMS.forEach((n, i) => {
+                const a = i*step - Math.PI/2; const s = a - step/2; const e = a + step/2;
+                const p = document.createElementNS(ns, "path");
+                p.setAttribute("d", `M${rin*Math.cos(s)},${rin*Math.sin(s)} L${rout*Math.cos(s)},${rout*Math.sin(s)} A${rout},${rout},0,0,1,${rout*Math.cos(e)},${rout*Math.sin(e)} L${rin*Math.cos(e)},${rin*Math.sin(e)} A${rin},${rin},0,0,1,${rin*Math.cos(s)},${rin*Math.sin(s)} Z`);
+                p.setAttribute("class", i%2===0 ? c2 : c1);
+                p.onclick = (ev) => this.addShot(n, m, ev.target); svg.appendChild(p);
+                if(m===2) {
+                    const t = document.createElementNS(ns, "text");
+                    t.setAttribute("x", 235*Math.cos(a)); t.setAttribute("y", 235*Math.sin(a));
+                    t.setAttribute("class", "txt-num"); t.textContent = n; svg.appendChild(t);
+                }
+            });
+        };
+        r(185, 215, "area-bl", "area-r", 2); r(125, 185, "area-w", "area-b", 1);
+        r(95, 125, "area-bl", "area-r", 3); r(30, 95, "area-w", "area-b", 1);
+        const b1 = document.createElementNS(ns, "circle"); b1.setAttribute("r", 30); b1.setAttribute("class", "area-b"); b1.onclick=(e)=>this.addShot(25,4,e.target); svg.appendChild(b1);
+        const b2 = document.createElementNS(ns, "circle"); b2.setAttribute("r", 13); b2.setAttribute("class", "area-r"); b2.onclick=(e)=>this.addShot(50,5,e.target); svg.appendChild(b2);
+    }
+};
+window.onload = () => GAME.updateLang();
+</script>
+</body>
+</html>
