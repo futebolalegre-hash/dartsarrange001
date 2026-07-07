@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-game-cache-v1';
+const CACHE_NAME = 'my-game-cache-v50';
 const urlsToCache = [
   './',
   './index.html',
